@@ -37,6 +37,7 @@ import com.alibaba.cobar.net.mysql.ErrorPacket;
 import com.alibaba.cobar.net.mysql.HandshakePacket;
 import com.alibaba.cobar.net.mysql.OkPacket;
 import com.alibaba.cobar.util.RandomUtil;
+import com.alibaba.cobar.util.StringUtil;
 import com.alibaba.cobar.util.TimeUtil;
 
 /**
@@ -166,7 +167,21 @@ public abstract class FrontendConnection extends AbstractConnection {
     }
 
     public void setSchema(String schema) {
-        this.schema = schema;
+    	if(StringUtil.isEmpty(schema)){
+    		//schema被设置为空的情况，可能在MySQL管理工具连接代理时出现，也有可能是用户url直接不填导致的
+    		if(StringUtil.isEmpty(this.schema)){
+				FrontendPrivileges privileges = getPrivileges();
+		        Set<String> schemas = privileges.getUserSchemas(user);
+		        if (schemas == null || schemas.size() == 0) {
+		        	//用户一个可用schema都没有，配置有问题
+		        }else{
+		        	//TODO 用户添加默认schema配置
+		        	this.schema=schemas.iterator().next();
+		        }
+    		}
+    	}else{
+    		this.schema = schema;
+    	}
     }
 
     public byte[] getSeed() {
